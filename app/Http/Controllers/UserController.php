@@ -23,7 +23,7 @@ class UserController extends Controller
 
         if ($validator->fails()) return response()->json(Api::errors($validator->errors()));
 
-        $result = User::whereHas("position", function (Builder $query) {
+        $result = User::with("position")->whereHas("position", function (Builder $query) {
             $query->where("role", "!=", "operator");
         });
 
