@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Res\Api;
 use App\Models\IncomingLetter;
 use App\Models\Letter;
+use App\Models\NumberOfLetter;
 use App\Models\OutgoingLetter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -84,12 +85,16 @@ class LetterController extends Controller
             $letter->regarding = $request->regarding;
             $letter->save();
 
+            $numberOfLetter = NumberOfLetter::first();
+
             // create incoming/outgoing letter
             if ($type === "incoming") {
                 $incomingLetter = new IncomingLetter;
                 $incomingLetter->letter_id = $letter->id;
                 $incomingLetter->sender = $request->sender;
                 $incomingLetter->save();
+
+                $numberOfLetter->incoming += 1;
             }
 
             if ($type === "outgoing") {
@@ -97,7 +102,11 @@ class LetterController extends Controller
                 $outgoingLetter->letter_id = $letter->id;
                 $outgoingLetter->destination = $request->destination;
                 $outgoingLetter->save();
+
+                $numberOfLetter->outgoing += 1;
             }
+
+            $numberOfLetter->save();
 
             return $letter->with($type)->find($letter->id);
         });

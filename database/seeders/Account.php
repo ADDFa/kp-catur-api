@@ -14,6 +14,8 @@ class Account extends Seeder
      */
     public function run()
     {
+        $this->call(NumberOfLetter::class);
+
         DB::table("users")->insert([
             "name"      => "Admin"
         ]);
