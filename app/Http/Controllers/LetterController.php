@@ -32,6 +32,16 @@ class LetterController extends Controller
         return $rules;
     }
 
+    private function notType($type)
+    {
+        return ($type !== "incoming" && $type !== "outgoing");
+    }
+
+    private function returnNotType()
+    {
+        return response()->json(Api::fails('Pilih tipe "incoming" atau "outgoing"'), 400);
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -39,9 +49,7 @@ class LetterController extends Controller
      */
     public function index(Request $request, $type)
     {
-        if ($type !== "incoming" && $type !== "outgoing") {
-            return response()->json(Api::fails('Pilih tipe "incoming" atau "outgoing"'), 400);
-        }
+        if ($this->notType($type)) return $this->returnNotType();
 
         $result = $type === "incoming" ?
             IncomingLetter::with("letter") :
@@ -65,9 +73,7 @@ class LetterController extends Controller
      */
     public function store(Request $request, $type)
     {
-        if ($type !== "incoming" && $type !== "outgoing") {
-            return response()->json(Api::fails('Pilih tipe "incoming" atau "outgoing"'), 400);
-        }
+        if ($this->notType($type)) return $this->returnNotType();
 
         $defaultRule = ["destination" => "required|string"];
         if ($type === "incoming") $defaultRule = ["sender" => "required|string"];
@@ -122,9 +128,7 @@ class LetterController extends Controller
      */
     public function show($type, Letter $letter)
     {
-        if ($type !== "incoming" && $type !== "outgoing") {
-            return response()->json(Api::fails('Pilih tipe "incoming" atau "outgoing"'), 400);
-        }
+        if ($this->notType($type)) return $this->returnNotType();
 
         $letter = $type === "incoming" ?
             IncomingLetter::with("letter")->find($letter->id) :
@@ -142,9 +146,7 @@ class LetterController extends Controller
      */
     public function update(Request $request, $type, Letter $letter)
     {
-        if ($type !== "incoming" && $type !== "outgoing") {
-            return response()->json(Api::fails('Pilih tipe "incoming" atau "outgoing"'), 400);
-        }
+        if ($this->notType($type)) return $this->returnNotType();
 
         $incomingLetter = IncomingLetter::find($letter->id);
         $defaultRule = ["destination" => "required|string"];
@@ -181,8 +183,13 @@ class LetterController extends Controller
      * @param  Letter  $letter
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Letter $letter)
+    public function destroy($type, Letter $letter)
     {
+        if ($this->notType($type)) return $this->returnNotType();
+
+        $numberOfLetter = NumberOfLetter::first();
+        $numberOfLetter->$type -= 1;
+
         return response()->json(Api::success($letter->delete()));
     }
 }

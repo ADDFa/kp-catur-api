@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CredentialController;
 use App\Http\Controllers\IncomingLetterController;
 use App\Http\Controllers\LetterController;
+use App\Http\Controllers\NumberOfLetterController;
 use App\Http\Controllers\OutgoingLetterController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\Auth;
@@ -42,10 +43,14 @@ Route::middleware(Auth::class)->group(function () {
         Route::get("/letter/{type}/{letter}", "show");
         Route::post("/letter/{type}", "store");
         Route::put("/letter/{type}/{letter}", "update");
-        Route::delete("/letter/{letter}", "destroy");
+        Route::delete("/letter/{type}/{letter}", "destroy");
     });
 
     Route::controller(IncomingLetterController::class)->group(function () {
         Route::patch("/disposition/{incomingLetter}", "disposition");
+    });
+
+    Route::controller(NumberOfLetterController::class)->group(function () {
+        Route::get("/number-of-letters", "show");
     });
 });
