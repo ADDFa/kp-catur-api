@@ -47,7 +47,7 @@ Route::middleware(Auth::class)->group(function () {
     });
 
     Route::controller(IncomingLetterController::class)->group(function () {
-        Route::patch("/disposition/{incomingLetter}", "disposition");
+        Route::post("/disposition", "disposition");
     });
 
     Route::controller(NumberOfLetterController::class)->group(function () {

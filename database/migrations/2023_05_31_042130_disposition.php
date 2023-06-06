@@ -13,10 +13,11 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create("incoming_letters", function (Blueprint $table) {
-            $table->foreignId("letter_id")->primary()->constrained("letters")->cascadeOnDelete();
-            $table->string("sender");
-            $table->enum("disposition_status", ["process", "finish"])->nullable();
+        Schema::create("dispositions", function (Blueprint $table) {
+            $table->id();
+            $table->foreignId("incoming_letter_id")->constrained("incoming_letters", "letter_id");
+            $table->foreignId("to")->constrained("users_position", "user_id");
+            $table->text("message");
             $table->timestamps();
         });
     }
@@ -28,6 +29,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists("incoming_letters");
+        Schema::dropIfExists("dispositions");
     }
 };
