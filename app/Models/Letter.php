@@ -23,6 +23,6 @@ class Letter extends Model
 
     public function category()
     {
-        return $this->hasOne(LetterCategory::class);
+        return $this->belongsTo(LetterCategory::class, "letter_category_id");
     }
 }

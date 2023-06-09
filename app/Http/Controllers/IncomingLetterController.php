@@ -7,6 +7,7 @@ use App\Http\Helper\Response;
 use App\Models\Disposition;
 use App\Models\IncomingLetter;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -30,6 +31,14 @@ class IncomingLetterController extends Controller
     public function index(Request $request)
     {
         $result = IncomingLetter::with("letter")->orderBy("created_at", "desc");
+        $result = new Filters($result, $request);
+        $result = $result->before()->after()->result()->get();
+        return Response::success($result);
+    }
+
+    public function report(Request $request)
+    {
+        $result = IncomingLetter::with(["letter", "letter.category"])->orderBy("created_at", "desc");
         $result = new Filters($result, $request);
         $result = $result->before()->after()->result()->get();
         return Response::success($result);

@@ -27,6 +27,14 @@ class OutgoingLetterController extends Controller
         return Response::success($result);
     }
 
+    public function report(Request $request)
+    {
+        $result = OutgoingLetter::with(["letter", "letter.category"])->orderBy("created_at", "desc");
+        $result = new Filters($result, $request);
+        $result = $result->before()->after()->result()->get();
+        return Response::success($result);
+    }
+
     public function show(OutgoingLetter $outgoingLetter)
     {
         return Response::success($outgoingLetter->with("letter")->find($outgoingLetter->letter_id));

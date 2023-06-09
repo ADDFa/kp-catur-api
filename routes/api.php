@@ -43,12 +43,14 @@ Route::middleware(Auth::class)->group(function () {
 
     Route::controller(IncomingLetterController::class)->group(function () {
         Route::get("/letter/incoming", "index");
+        Route::get("/letter/incoming/report", "report");
         Route::get("/letter/incoming/{incomingLetter}", "show");
         Route::post("/disposition", "disposition");
     });
 
     Route::controller(OutgoingLetterController::class)->group(function () {
         Route::get("/letter/outgoing", "index");
+        Route::get("/letter/outgoing/report", "report");
         Route::get("/letter/outgoing/{outgoingLetter}", "show");
     });
 

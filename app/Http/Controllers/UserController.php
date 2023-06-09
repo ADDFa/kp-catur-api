@@ -42,12 +42,12 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), $this->rules);
         if ($validator->fails()) return Response::errors($validator);
 
-        $result = DB::transaction(function () use ($request) {
-            $checkKepsek = User::with("role")->where("role", $request->role)->first();
-            if ($checkKepsek && ($checkKepsek->role->role === "Kepala Sekolah")) {
-                return Response::fails("Kepala Sekolah Telah Terdaftar", 400);
-            }
+        $checkKepsek = User::with("role")->where("role_id", $request->role)->first();
+        if ($checkKepsek && ($checkKepsek->role->role === "Kepala Sekolah")) {
+            return Response::fails("Kepala Sekolah Telah Terdaftar", 400);
+        }
 
+        $result = DB::transaction(function () use ($request) {
             // crate new user
             $user = new User;
             $user->name = $request->name;
@@ -75,7 +75,7 @@ class UserController extends Controller
         $validator = Validator::make($request->all(), $this->rules);
         if ($validator->fails()) return Response::errors($validator);
 
-        $checkKepsek = User::with("role")->where("role", $request->role)->first();
+        $checkKepsek = User::with("role")->where("role_id", $request->role)->first();
         if ($checkKepsek && ($checkKepsek->role->role === "Kepala Sekolah")) {
             return Response::fails("Kepala Sekolah Telah Terdaftar", 400);
         }
