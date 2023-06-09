@@ -9,8 +9,8 @@ class User extends Model
 {
     use HasFactory;
 
-    public function position()
+    public function role()
     {
-        return $this->hasOne(UserPosition::class);
+        return $this->belongsTo(Role::class);
     }
 }

@@ -13,10 +13,9 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create("number_of_letters", function (Blueprint $table) {
+        Schema::create("roles", function (Blueprint $table) {
             $table->id();
-            $table->integer("incoming", false, true);
-            $table->integer("outgoing", false, true);
+            $table->enum("role", ["Staff", "Kepala Sekolah", "Wakil Kepala Sekolah", "Operator"]);
             $table->timestamps();
         });
     }
@@ -28,6 +27,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists("number_of_letters");
+        Schema::dropIfExists("roles");
     }
 };

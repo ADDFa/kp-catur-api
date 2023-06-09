@@ -4,8 +4,9 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
-class Run extends Seeder
+class LetterCategory extends Seeder
 {
     /**
      * Run the database seeds.
@@ -14,9 +15,10 @@ class Run extends Seeder
      */
     public function run()
     {
-        $this->call([
-            Account::class,
-            NumberOfLetter::class
+        DB::table("letter_categories")->insert([
+            ["category" => "Penting"],
+            ["category" => "Mendesak"],
+            ["category" => "Biasa"]
         ]);
     }
 }

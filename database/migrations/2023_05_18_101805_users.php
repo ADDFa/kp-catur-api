@@ -17,6 +17,7 @@ return new class extends Migration
             $table->id();
             $table->string("name");
             $table->string("profile_pic")->default("user.jpg");
+            $table->foreignId("role_id")->constrained("roles");
             $table->timestamps();
         });
     }

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Res\Api;
+use App\Http\Helper\Response;
 use App\Models\Credential;
 use App\Models\User;
 use Exception;
@@ -12,19 +12,39 @@ use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
+    private function tokens($user)
+    {
+        try {
+            $encode = function (int $exp, $keyname) use ($user) {
+                $time = time();
+
+                return JWT::encode([
+                    "user"  => $user,
+                    "exp"   => $time + $exp
+                ], env($keyname), "HS256");
+            };
+
+            $result = [
+                "user"          => $user,
+                "token_access"  => $encode(3600, "JWT_SECRET"),
+                "token_refresh" => $encode(604800, "JWT_REFRESH")
+            ];
+
+            return Response::success($result);
+        } catch (Exception $e) {
+            return Response::fails($e->getMessage());
+        }
+    }
+
     public function login(Request $request)
     {
-        // get user credential
         $credential = Credential::find($request->username);
-        if (!$credential) return response()->json(Api::fails("Username atau Password salah"), 404);
-
-        // cek password
-        if (!password_verify($request->password, $credential->password)) {
-            return response()->json(Api::fails("Username atau Password salah"), 404);
+        if (!$credential || !password_verify($request->password, $credential->password)) {
+            return Response::fails("Username atau Password salah", 404);
         }
 
-        // generate token
-        return $this->tokens(User::with("position")->find($credential->user_id));
+        $user = User::with("role")->find($credential->user_id);
+        return $this->tokens($user);
     }
 
     public function refreshToken(Request $request)
@@ -33,7 +53,7 @@ class AuthController extends Controller
             $payload = JWT::decode($request->token_refresh, new Key(env("JWT_REFRESH"), "HS256"));
             return $this->tokens($payload->user);
         } catch (Exception $e) {
-            return response()->json(Api::fails($e->getMessage()), 500);
+            return response()->json(Response::fails($e->getMessage()), 500);
         }
     }
 }

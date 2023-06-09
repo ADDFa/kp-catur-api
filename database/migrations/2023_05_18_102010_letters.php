@@ -15,10 +15,9 @@ return new class extends Migration
     {
         Schema::create("letters", function (Blueprint $table) {
             $table->id();
-            $table->string("reference_number");
-            $table->date("date");
-            $table->string("letter_type");
-            $table->enum("category", ["penting", "mendesak", "biasa"]);
+            $table->string("number");
+            $table->string("type");
+            $table->foreignId("letter_category_id")->constrained("letter_categories");
             $table->string("regarding");
             $table->timestamps();
         });

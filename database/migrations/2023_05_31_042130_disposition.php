@@ -15,8 +15,8 @@ return new class extends Migration
     {
         Schema::create("dispositions", function (Blueprint $table) {
             $table->id();
-            $table->foreignId("incoming_letter_id")->constrained("incoming_letters", "letter_id");
-            $table->foreignId("to")->constrained("users_position", "user_id");
+            $table->foreignId("incoming_letter_id")->constrained("incoming_letters", "letter_id")->cascadeOnDelete();
+            $table->foreignId("user_id")->constrained("users");
             $table->text("message");
             $table->timestamps();
         });

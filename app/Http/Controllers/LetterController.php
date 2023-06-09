@@ -2,44 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Res\Api;
-use App\Models\IncomingLetter;
+use App\Http\Helper\Filters;
+use App\Http\Helper\Response;
 use App\Models\Letter;
-use App\Models\NumberOfLetter;
-use App\Models\OutgoingLetter;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 class LetterController extends Controller
 {
-    private function getRules(array $defaultRule): array
+    private array $rules;
+
+    public function __construct()
     {
-        $rules = [
-            "reference_number"  => "required|string",
-            "date"              => "required|date_format:Y-m-d",
-            "letter_type"       => "required|string",
-            "category"          => [
+        $this->rules = [
+            "number"        => "required|string",
+            "type"          => "required|string",
+            "category"      => "required|exists:letter_categories,id",
+            "regarding"     => "required|string",
+            "as"            => [
                 "required",
-                Rule::in(["penting", "mendesak", "biasa"])
-            ],
-            "regarding"         => "required|string"
+                Rule::in(["in", "out"])
+            ]
         ];
-
-        $rules += $defaultRule;
-        return $rules;
-    }
-
-    private function notType($type)
-    {
-        return ($type !== "incoming" && $type !== "outgoing");
-    }
-
-    private function returnNotType()
-    {
-        return response()->json(Api::fails('Pilih tipe "incoming" atau "outgoing"'), 400);
     }
 
     /**
@@ -47,22 +34,12 @@ class LetterController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Request $request, $type)
+    public function index(Request $request)
     {
-        if ($this->notType($type)) return $this->returnNotType();
-
-        $result = $type === "incoming" ?
-            IncomingLetter::with("letter") :
-            OutgoingLetter::with("letter");
-
-        if ($request->range) {
-            $result = $result->whereHas("letter", function (Builder $query) use ($request) {
-                $query->whereBetween("letters.date", explode("_", $request->range));
-            });
-        }
-        if ($request->take) $result->take($request->take);
-
-        return response()->json(Api::success($result->get()));
+        $result = Letter::orderBy("created_at", "desc");
+        $result = new Filters((new Letter), $request);
+        $result = $result->after()->before()->result()->get();
+        return $result;
     }
 
     /**
@@ -71,53 +48,21 @@ class LetterController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request, $type)
+    public function store(Request $request)
     {
-        if ($this->notType($type)) return $this->returnNotType();
+        $validator = Validator::make($request->all(), $this->rules);
+        if ($validator->fails()) return Response::errors($validator);
 
-        $defaultRule = ["destination" => "required|string"];
-        if ($type === "incoming") $defaultRule = ["sender" => "required|string"];
 
-        $validator = Validator::make($request->all(), $this->getRules($defaultRule));
-        if ($validator->fails()) return response()->json(Api::errors($validator->errors()), 400);
+        $letter = Letter::create([
+            "number"                => $request->number,
+            "type"                  => $request->type,
+            "letter_category_id"    => $request->category,
+            "regarding"             => $request->regarding
+        ]);
 
-        $result = DB::transaction(function () use ($request, $type) {
-            // create letter
-            $letter = new Letter;
-            $letter->reference_number = $request->reference_number;
-            $letter->date = $request->date;
-            $letter->letter_type = $request->letter_type;
-            $letter->category = $request->category;
-            $letter->regarding = $request->regarding;
-            $letter->save();
-
-            $numberOfLetter = NumberOfLetter::first();
-
-            // create incoming/outgoing letter
-            if ($type === "incoming") {
-                $incomingLetter = new IncomingLetter;
-                $incomingLetter->letter_id = $letter->id;
-                $incomingLetter->sender = $request->sender;
-                $incomingLetter->save();
-
-                $numberOfLetter->incoming += 1;
-            }
-
-            if ($type === "outgoing") {
-                $outgoingLetter = new OutgoingLetter;
-                $outgoingLetter->letter_id = $letter->id;
-                $outgoingLetter->destination = $request->destination;
-                $outgoingLetter->save();
-
-                $numberOfLetter->outgoing += 1;
-            }
-
-            $numberOfLetter->save();
-
-            return $letter->with($type)->find($letter->id);
-        });
-
-        return response()->json(Api::success($result));
+        $controller = ($request->as === "in") ? "IncomingLetterController" : "OutgoingLetterController";
+        return App::call("App\Http\Controllers\\{$controller}@store", ["letterId" => $letter->id]);
     }
 
     /**
@@ -126,15 +71,9 @@ class LetterController extends Controller
      * @param  Letter  $letter
      * @return \Illuminate\Http\Response
      */
-    public function show($type, Letter $letter)
+    public function show(Letter $letter)
     {
-        if ($this->notType($type)) return $this->returnNotType();
-
-        $letter = $type === "incoming" ?
-            IncomingLetter::with("letter")->find($letter->id) :
-            OutgoingLetter::with("letter")->find($letter->id);
-
-        return response()->json(Api::success($letter));
+        return Response::success($letter);
     }
 
     /**
@@ -144,37 +83,20 @@ class LetterController extends Controller
      * @param  Letter  $letter
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $type, Letter $letter)
+    public function update(Request $request, Letter $letter)
     {
-        if ($this->notType($type)) return $this->returnNotType();
+        $validator = Validator::make($request->all(), $this->rules);
+        if ($validator->fails()) return Response::errors($validator);
 
-        $incomingLetter = IncomingLetter::find($letter->id);
-        $defaultRule = ["destination" => "required|string"];
-        if ($incomingLetter) $defaultRule = ["sender" => "required|string"];
-
-        $validator = Validator::make($request->all(), $this->getRules($defaultRule));
-        if ($validator->fails()) return response()->json(Api::errors($validator->errors()), 400);
-
-        // update letter
-        $letter->reference_number = $request->reference_number;
-        $letter->date = $request->date;
-        $letter->letter_type = $request->letter_type;
-        $letter->category = $request->category;
+        $letter->number = $request->number;
+        $letter->type = $request->type;
+        $letter->letter_category_id = $request->category;
         $letter->regarding = $request->regarding;
         $letter->save();
 
-        // update incoming/outgoing letter
-        if ($incomingLetter) {
-            $incomingLetter->sender = $request->sender;
-            $incomingLetter->save();
-        } else {
-            $outgoingLetter = OutgoingLetter::find($letter->id);
-            $outgoingLetter->destination = $request->destination;
-            $outgoingLetter->save();
-        }
+        $controller = ($request->as === "in") ? "IncomingLetterController" : "OutgoingLetterController";
 
-        $type = $incomingLetter ? "incoming" : "outgoing";
-        return $letter->with($type)->find($letter->id);
+        return app()->call("\App\Http\Controllers\\{$controller}@update", ["letterId" => $letter->id]);
     }
 
     /**
@@ -183,13 +105,24 @@ class LetterController extends Controller
      * @param  Letter  $letter
      * @return \Illuminate\Http\Response
      */
-    public function destroy($type, Letter $letter)
+    public function destroy(Request $request, Letter $letter)
     {
-        if ($this->notType($type)) return $this->returnNotType();
+        if (!$request->as) return Response::fails("Pilih jenis surat masuk/keluar");
+        if ($request->as === "in") {
+            $incomingLetter = \App\Models\IncomingLetter::find($letter->id);
+            Storage::delete($incomingLetter->letter_image);
+        }
 
-        $numberOfLetter = NumberOfLetter::first();
-        $numberOfLetter->$type -= 1;
+        return Response::success($letter->delete());
+    }
 
-        return response()->json(Api::success($letter->delete()));
+    public function total()
+    {
+        $totalIn = app()->call("\App\Http\Controllers\IncomingLetterController@total");
+        $totalOut = app()->call("\App\Http\Controllers\OutgoingLetterController@total");
+        return Response::success([
+            "incoming"  => $totalIn,
+            "outgoing"  => $totalOut
+        ]);
     }
 }

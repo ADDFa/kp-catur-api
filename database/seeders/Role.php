@@ -6,7 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class NumberOfLetter extends Seeder
+class Role extends Seeder
 {
     /**
      * Run the database seeds.
@@ -15,9 +15,11 @@ class NumberOfLetter extends Seeder
      */
     public function run()
     {
-        DB::table("number_of_letters")->insert([
-            "incoming"  => 0,
-            "outgoing"  => 0
+        DB::table("roles")->insert([
+            ["role" => "Staff"],
+            ["role" => "Kepala Sekolah"],
+            ["role" => "Wakil Kepala Sekolah"],
+            ["role" => "Operator"]
         ]);
     }
 }

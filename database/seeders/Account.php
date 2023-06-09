@@ -16,16 +16,20 @@ class Account extends Seeder
     {
         DB::table("users")->insert([
             [
-                "name"      => "Admin"
+                "name"      => "Admin",
+                "role_id"   => 4
             ],
             [
-                "name"      => "Kepala Sekolah"
+                "name"      => "Kepala Sekolah",
+                "role_id"   => 2
             ],
             [
-                "name"      => "Wakil Kepala Sekolah"
+                "name"      => "Wakil Kepala Sekolah",
+                "role_id"   => 3
             ],
             [
-                "name"      => "Staff"
+                "name"      => "Staff",
+                "role_id"   => 1
             ]
         ]);
 
@@ -49,25 +53,6 @@ class Account extends Seeder
                 "user_id"   => 4,
                 "username"  => "staff",
                 "password"  => password_hash("password", PASSWORD_DEFAULT)
-            ]
-        ]);
-
-        DB::table("users_position")->insert([
-            [
-                "user_id"   => 1,
-                "role"      => "operator"
-            ],
-            [
-                "user_id"   => 2,
-                "role"      => "kepsek"
-            ],
-            [
-                "user_id"   => 3,
-                "role"      => "wakil_kepsek"
-            ],
-            [
-                "user_id"   => 4,
-                "role"      => "staff"
             ]
         ]);
     }

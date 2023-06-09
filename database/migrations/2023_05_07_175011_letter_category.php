@@ -13,9 +13,9 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create("users_position", function (Blueprint $table) {
-            $table->foreignId("user_id")->primary()->constrained("users")->cascadeOnDelete();
-            $table->enum("role", ["staff", "kepsek", "wakil_kepsek", "operator"]);
+        Schema::create("letter_categories", function (Blueprint $table) {
+            $table->id();
+            $table->enum("category", ["Penting", "Mendesak", "Biasa"]);
             $table->timestamps();
         });
     }
@@ -27,6 +27,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists("users_position");
+        Schema::dropIfExists("letter_categories");
     }
 };

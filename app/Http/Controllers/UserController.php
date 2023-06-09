@@ -2,95 +2,99 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Res\Api;
+use App\Http\Helper\Filters;
+use App\Http\Helper\Response;
 use App\Models\Credential;
 use App\Models\User;
-use App\Models\UserPosition;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+    private array $rules;
+
+    public function __construct()
+    {
+        $this->rules = [
+            "name"          => "required|string",
+            "role"          => "required|exists:roles,id",
+            "username"      => "required|unique:credentials,username",
+            "password"      => "required|min:8"
+        ];
+    }
+
     public function index(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            "take"  => "integer",
-            "name"  => "string"
-        ]);
-
-        if ($validator->fails()) return response()->json(Api::errors($validator->errors()));
-
-        $result = User::with("position")->whereHas("position", function (Builder $query) {
-            $query->where("role", "!=", "operator");
-        });
-
-        if ($request->take) $result = $result->take($request->take);
-        if ($request->name) $result = $result->where("name", "like", "%{$request->name}%");
-
-        return response()->json(Api::success($result->get()));
+        $result = User::with("role");
+        $result = new Filters($result, $request);
+        $result = $result->search("name")->before()->after()->result()->get();
+        return Response::success($result);
     }
 
     public function show(User $user)
     {
-        $result = $user->whereHas("position", function (Builder $query) {
-            $query->where("role", "!=", "operator");
-        })->find($user->id);
-
-        return response()->json(Api::success($result));
+        return Response::success($user::with("role")->find($user->id));
     }
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            "name"      => "required|string",
-            "role"      => [
-                "required",
-                "string",
-                Rule::in(["staff", "kepsek", "wakil_kepsek"])
-            ],
-            "username"  => "required|string|unique:credentials,username"
-        ]);
-
-        if ($validator->fails()) return response()->json(Api::errors($validator->errors()));
+        $validator = Validator::make($request->all(), $this->rules);
+        if ($validator->fails()) return Response::errors($validator);
 
         $result = DB::transaction(function () use ($request) {
+            $checkKepsek = User::with("role")->where("role", $request->role)->first();
+            if ($checkKepsek && ($checkKepsek->role->role === "Kepala Sekolah")) {
+                return Response::fails("Kepala Sekolah Telah Terdaftar", 400);
+            }
+
             // crate new user
             $user = new User;
             $user->name = $request->name;
+            $user->role_id = $request->role;
             $user->save();
-
-            // set user position
-            $userPositon = new UserPosition;
-            $userPositon->user_id = $user->id;
-            $userPositon->role = $request->role;
-            $userPositon->save();
 
             // crate account(credentials)
             $credential = new Credential;
             $credential->user_id = $user->id;
             $credential->username = $request->username;
-            $credential->password = password_hash("password", PASSWORD_DEFAULT);
+            $credential->password = password_hash($request->password, PASSWORD_DEFAULT);
             $credential->save();
 
-            return [
-                "user"          => $user,
-                "credential"    => [
-                    "username"  => $request->username,
-                    "password"  => "password"
-                ]
-            ];
+            return $user;
         });
 
-        return response()->json(Api::success($result));
+        return Response::success($result);
+    }
+
+    public function update(Request $request, User $user)
+    {
+        unset($this->rules["username"]);
+        unset($this->rules["password"]);
+
+        $validator = Validator::make($request->all(), $this->rules);
+        if ($validator->fails()) return Response::errors($validator);
+
+        $checkKepsek = User::with("role")->where("role", $request->role)->first();
+        if ($checkKepsek && ($checkKepsek->role->role === "Kepala Sekolah")) {
+            return Response::fails("Kepala Sekolah Telah Terdaftar", 400);
+        }
+
+        $user->name = $request->name;
+        $user->role_id = $request->role;
+        $user->save();
+
+        return Response::success($user);
     }
 
     public function destroy(User $user)
     {
-        $user = User::with("position")->find($user->id);
-        if ($user->position->role === "operator") return response()->json(Api::fails("User tidak ditemukan"), 404);
-        return Api::success($user->delete());
+        return Response::success($user->delete());
+    }
+
+    public function total()
+    {
+        $total = User::all()->count();
+        return Response::success($total);
     }
 }

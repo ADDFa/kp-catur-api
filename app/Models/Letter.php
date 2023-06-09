@@ -9,6 +9,8 @@ class Letter extends Model
 {
     use HasFactory;
 
+    protected $guarded = ["id"];
+
     public function incoming()
     {
         return $this->hasOne(IncomingLetter::class);
@@ -17,5 +19,10 @@ class Letter extends Model
     public function outgoing()
     {
         return $this->hasOne(OutgoingLetter::class);
+    }
+
+    public function category()
+    {
+        return $this->hasOne(LetterCategory::class);
     }
 }

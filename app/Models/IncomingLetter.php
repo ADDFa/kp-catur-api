@@ -10,9 +10,11 @@ class IncomingLetter extends Model
     use HasFactory;
 
     protected $primaryKey = "letter_id";
+    protected $guarded = [];
+    public $incrementing = false;
 
     public function letter()
     {
-        return $this->hasOne(Letter::class, "id", "letter_id");
+        return $this->belongsTo(Letter::class);
     }
 }
