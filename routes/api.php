@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CredentialController;
+use App\Http\Controllers\DispositionController;
 use App\Http\Controllers\IncomingLetterController;
 use App\Http\Controllers\LetterCategoryController;
 use App\Http\Controllers\LetterController;
@@ -45,7 +46,6 @@ Route::middleware(Auth::class)->group(function () {
         Route::get("/letter/incoming", "index");
         Route::get("/letter/incoming/report", "report");
         Route::get("/letter/incoming/{incomingLetter}", "show");
-        Route::post("/disposition", "disposition");
     });
 
     Route::controller(OutgoingLetterController::class)->group(function () {
@@ -65,5 +65,12 @@ Route::middleware(Auth::class)->group(function () {
         Route::post("/letter", "store");
         Route::put("/letter/{letter}", "update");
         Route::delete("/letter/{letter}", "destroy");
+    });
+
+    Route::controller(DispositionController::class)->group(function () {
+        Route::get("/disposition", "index");
+        Route::get("/disposition/{disposition}", "show");
+        Route::patch("/disposition/{disposition}", "dispositionFinish");
+        Route::post("/disposition", "create");
     });
 });

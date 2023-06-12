@@ -17,8 +17,7 @@ return new class extends Migration
             $table->foreignId("letter_id")->primary()->constrained("letters")->cascadeOnDelete();
             $table->string("sender");
             $table->string("letter_image");
-            $table->integer("total_disposition")->unsigned()->default(0);
-            $table->enum("disposition_status", ["process", "finish"])->default("process");
+            $table->enum("disposition_status", ["process", "finish"])->nullable();
             $table->timestamps();
         });
     }

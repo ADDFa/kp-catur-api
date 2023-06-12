@@ -7,7 +7,6 @@ use App\Http\Helper\Response;
 use App\Models\Disposition;
 use App\Models\IncomingLetter;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -83,39 +82,6 @@ class IncomingLetterController extends Controller
         $letter->save();
 
         return Response::success($letter);
-    }
-
-    public function disposition(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            "incoming_letter_id"    => "required|exists:incoming_letters,letter_id",
-            "user_id"               => "required|exists:user,id",
-            "message"               => "required|string"
-        ]);
-        if ($validator->fails()) return Response::errors($validator);
-
-        $user = User::with("role")->find($request->user_id);
-        if ($user->role_id === $request->user->role_id || $user->role->role === "Operator") {
-            return Response::fails("Gagal mendisposisikan", 400);
-        }
-
-        $incomingLetter = IncomingLetter::find($request->incoming_letter_id);
-        $incomingLetter->total_disposition += 1;
-        $incomingLetter->save();
-
-        $disposition = new Disposition;
-        $disposition->incoming_letter_id = $request->incoming_letter_id;
-        $disposition->user_id = $request->user_id;
-        $disposition->message = $request->message;
-        $disposition->save();
-
-        return Response::success($disposition);
-    }
-
-    public function dispositionFinis(Disposition $disposition)
-    {
-        $disposition->disposition_status = "finish";
-        return Response::success($disposition);
     }
 
     public function total()
