@@ -16,6 +16,7 @@ return new class extends Migration
         Schema::create("letters", function (Blueprint $table) {
             $table->id();
             $table->string("number");
+            $table->date("date");
             $table->string("type");
             $table->foreignId("letter_category_id")->constrained("letter_categories");
             $table->string("regarding");

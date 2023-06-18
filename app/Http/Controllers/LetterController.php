@@ -25,7 +25,8 @@ class LetterController extends Controller
             "as"            => [
                 "required",
                 Rule::in(["in", "out"])
-            ]
+            ],
+            "date"          => "required|date_format:Y-m-d"
         ];
     }
 
@@ -58,7 +59,8 @@ class LetterController extends Controller
             "number"                => $request->number,
             "type"                  => $request->type,
             "letter_category_id"    => $request->category,
-            "regarding"             => $request->regarding
+            "regarding"             => $request->regarding,
+            "date"                  => $request->date
         ]);
 
         $controller = ($request->as === "in") ? "IncomingLetterController" : "OutgoingLetterController";
@@ -92,6 +94,7 @@ class LetterController extends Controller
         $letter->type = $request->type;
         $letter->letter_category_id = $request->category;
         $letter->regarding = $request->regarding;
+        $letter->date = $request->date;
         $letter->save();
 
         $controller = ($request->as === "in") ? "IncomingLetterController" : "OutgoingLetterController";
