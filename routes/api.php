@@ -26,6 +26,11 @@ use Illuminate\Support\Facades\Route;
 Route::controller(AuthController::class)->group(function () {
     Route::post("/login", "login");
     Route::post("/refresh", "refreshToken");
+    Route::put("/account/{id}", "account");
+});
+
+Route::controller(IncomingLetterController::class)->group(function () {
+    Route::get("/letter/incoming/file", "showLetterFile");
 });
 
 Route::middleware(Auth::class)->group(function () {
@@ -72,5 +77,6 @@ Route::middleware(Auth::class)->group(function () {
         Route::get("/disposition/{disposition}", "show");
         Route::patch("/disposition/{disposition}", "dispositionFinish");
         Route::post("/disposition", "create");
+        Route::post("/disposition/next", "keepOnDisposition");
     });
 });

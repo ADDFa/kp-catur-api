@@ -60,4 +60,19 @@ class DispositionController extends Controller
         $incomingLetter->save();
         return Response::success($incomingLetter);
     }
+
+    public function keepOnDisposition(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "user_id"           => "required|exists:users,id",
+            "disposition_id"    => "required|exists:dispositions,id"
+        ]);
+        if ($validator->fails()) return Response::errors($validator);
+
+        $disposition = Disposition::find($request->disposition_id);
+        $disposition->user_id = $request->user_id;
+        $disposition->save();
+
+        return Response::fails("Berhasil meneruskan disposisi", 200);
+    }
 }

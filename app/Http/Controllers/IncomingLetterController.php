@@ -86,4 +86,17 @@ class IncomingLetterController extends Controller
     {
         return IncomingLetter::all()->count();
     }
+
+    public function showLetterFile(Request $request)
+    {
+        if (!$request->file_name) {
+            return Response::fails("Nama File Tidak Ada!", 400);
+        }
+
+        $exists = Storage::exists("{$request->file_name}", "local");
+        if (!$exists) return Response::fails("File tidak ada!");
+
+        $file = Storage::get($request->file_name);
+        return $file;
+    }
 }

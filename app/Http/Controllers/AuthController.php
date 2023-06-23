@@ -9,6 +9,7 @@ use Exception;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
@@ -55,5 +56,28 @@ class AuthController extends Controller
         } catch (Exception $e) {
             return response()->json(Response::fails($e->getMessage()), 500);
         }
+    }
+
+    public function account(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            "username"      => "required|string",
+            "password"      => "required|min:8",
+            "old_password"  => "required"
+        ]);
+        if ($validator->fails()) return Response::errors($validator);
+
+        $credential = Credential::where("user_id", $id)->first();
+        if (!$credential) return Response::fails("Unknown");
+
+        if (!password_verify($request->old_password, $credential->password)) {
+            return Response::fails("Password salah!");
+        }
+
+        $credential->username = $request->username;
+        $credential->password = password_hash($request->password, PASSWORD_DEFAULT);
+        $credential->save();
+
+        return $this->tokens(User::find($credential->user_id));
     }
 }
